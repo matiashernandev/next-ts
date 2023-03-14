@@ -1,24 +1,37 @@
-import type { FC, FunctionComponent } from "react";
+import { useRef, useEffect, useState } from "react";
+import type { ImgHTMLAttributes } from "react";
 
-export function RandomFoxInferido() {
-	return <div>RandomFox</div>;
-}
-
-export const RandomFoxFC: FC = () => {
-	return <img />;
+type LazyImageProps = {
+	src: string;
 };
 
-export const RandomFoxFunctionComponent: FunctionComponent = () => {
-	return <img />;
-};
+type Props = ImgHTMLAttributes<HTMLImageElement> & LazyImageProps;
 
-/* -------------------------------------------------------------------------- */
+export function LazyImage({ src, ...imgProps }: Props): JSX.Element {
+	const node = useRef<HTMLImageElement>(null);
+	const [currentSrc, setCurrentSrc] = useState(
+		"data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzIwIiBoZWlnaHQ9IjMyMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB2ZXJzaW9uPSIxLjEiLz4="
+	);
 
-type Props = {
-	img: string;
-};
+	useEffect(() => {
+		const observer = new IntersectionObserver((entries) => {
+			entries.forEach((entry) => {
+				if (!entry.isIntersecting || !node.current) {
+					return;
+				}
 
-//* Más usada en teoría
-export function RandomFox({ img }: Props): JSX.Element {
-	return <img width="320" height="auto" className="rounded-lg" src={img} />;
+				setCurrentSrc(src);
+			});
+		});
+
+		if (node.current) {
+			observer.observe(node.current);
+		}
+
+		return () => {
+			observer.disconnect();
+		};
+	}, [src]);
+
+	return <img ref={node} src={currentSrc} {...imgProps} />;
 }
